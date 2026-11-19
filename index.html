@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CHAPTER.18 — Photo Frame Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--dark:#302018;--coffee:#72513d;--wood:#a78361;--beige:#d8c2a4;--cream:#f5efe5;--ivory:#fffcf7;--line:rgba(216,194,164,.22);--muted:#c4ad96}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;font-family:'Open Sans',sans-serif;color:var(--dark)}
+body{background:#b38b63 center/cover fixed no-repeat;position:relative}
+body:before{content:"";position:fixed;inset:0;background:linear-gradient(115deg,rgba(255,248,235,.45),rgba(88,48,25,.18));backdrop-filter:saturate(.85);pointer-events:none;z-index:-1}
+button,input,select{font:inherit}button{cursor:pointer}
+.app{min-height:100vh;display:flex;flex-direction:column;background:rgba(245,239,229,.16)}
+.topbar{height:76px;padding:0 clamp(16px,4vw,58px);display:flex;align-items:center;justify-content:space-between;background:rgba(255,252,247,.72);backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.55);position:sticky;top:0;z-index:20}
+.brand{font:500 25px 'Playfair Display',serif;letter-spacing:2px}.brand small{display:block;font:600 8px 'Open Sans';letter-spacing:4px;text-align:center;margin-top:2px}
+.top-center{font-size:10px;letter-spacing:2.5px;text-transform:uppercase;color:var(--coffee)}.top-actions{display:flex;align-items:center;gap:10px}
+.pill{border:1px solid var(--line);border-radius:30px;padding:9px 15px;background:rgba(255,252,247,.7);font-size:11px;color:var(--dark)}
+.count{font:500 12px 'Playfair Display';background:var(--dark);color:var(--cream);border-radius:50%;width:34px;height:34px;display:grid;place-items:center}
+main{width:min(1240px,94%);margin:26px auto 110px;flex:1}
+.stepsbar{display:flex;align-items:center;gap:14px;margin:0 auto 18px;max-width:900px}
+.stepsbar .track{height:5px;background:rgba(73,51,41,.18);border-radius:10px;flex:1;overflow:hidden}.track span{display:block;width:33%;height:100%;background:var(--dark);border-radius:10px;transition:.3s}
+.step-label{font-size:10px;letter-spacing:2px;white-space:nowrap}
+.template-tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.tab{border:1px solid rgba(73,51,41,.25);background:rgba(255,252,247,.78);color:var(--coffee);padding:10px 17px;border-radius:30px;font-size:11px;transition:.2s}
+.tab.active{background:var(--dark);color:var(--cream);border-color:var(--dark);box-shadow:0 5px 15px #49332930}
+.workspace{display:grid;grid-template-columns:minmax(320px,1.05fr) minmax(300px,.95fr);gap:24px;align-items:start}
+.editor-card,.panel{background:rgba(255,252,247,.88);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.65);border-radius:22px;box-shadow:0 18px 55px rgba(53,28,16,.13)}
+.editor-card{padding:22px}
+.editor-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.editor-head h2{font:500 23px 'Playfair Display';margin:0}.subtle{font-size:10px;color:var(--muted);letter-spacing:1px}
+.frame-wrap{display:flex;justify-content:center;align-items:center;min-height:450px;padding:18px;background:linear-gradient(145deg,#e9d8c1,#c6a783);border-radius:16px;overflow:hidden}
+#frame{width:min(100%,390px);aspect-ratio:2/3;background:#fffaf2;position:relative;overflow:hidden;box-shadow:0 14px 35px #38221435;border-radius:5px;touch-action:pan-y}
+.slot{position:absolute;z-index:2;background:#f3eee7;border:1px dashed rgba(114,81,61,.45);overflow:hidden;display:flex;align-items:center;justify-content:center;color:#1384c5;font-size:11px;text-align:center;cursor:pointer}
+.slot.selected{outline:3px solid #b47b45;outline-offset:-3px;z-index:4}
+.slot img{width:100%;height:100%;object-fit:cover;pointer-events:none;user-select:none}
+.slot .placeholder{display:flex;flex-direction:column;gap:8px;align-items:center;padding:8px}
+.camera{width:34px;height:34px;border-radius:12px;background:#e1edf0;display:grid;place-items:center;font-size:17px}
+.frame-caption{position:absolute;bottom:0;left:0;right:0;height:12%;display:flex;align-items:center;justify-content:center;text-align:center;font:500 18px 'Playfair Display';letter-spacing:2px;color:#493329;pointer-events:none}
+.frame-brand{position:absolute;top:2.5%;left:0;right:0;text-align:center;font:600 8px 'Open Sans';letter-spacing:3px;color:#72513d;pointer-events:none}
+.panel{padding:23px;display:flex;flex-direction:column;gap:18px}
+.panel h3{font:500 24px 'Playfair Display';margin:0}.panel p{font-size:12px;line-height:1.8;color:var(--muted);margin:0}
+.section{border-top:1px solid var(--line);padding-top:15px}.section-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:12px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line);border-radius:10px;padding:11px 13px;background:var(--ivory);color:var(--dark);font-size:11px;transition:.2s}
+.btn:hover{transform:translateY(-1px);border-color:var(--wood)}
+.btn.primary{background:var(--dark);color:var(--cream);border-color:var(--dark)}
+.btn.accent{background:#a78361;color:white;border-color:#a78361}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+input[type=file]{display:none}
+#frameArtwork{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;z-index:1;pointer-events:none}
+.manager-backdrop{position:fixed;inset:0;z-index:100;background:rgba(35,23,17,.78);display:none;align-items:center;justify-content:center;padding:18px}
+.manager-backdrop.open{display:flex}.manager{width:min(1000px,100%);max-height:94vh;overflow:auto;background:var(--cream);border-radius:18px;padding:22px;box-shadow:0 25px 80px #1e100bcc}
+.manager-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px}.manager-head h2{font:500 25px 'Playfair Display';margin:0}.manager-grid{display:grid;grid-template-columns:minmax(260px,1fr) minmax(280px,.85fr);gap:20px}
+.manager-stage{background:#e2d1bd;border-radius:12px;display:flex;align-items:center;justify-content:center;min-height:420px;padding:16px}
+#managerCanvas{position:relative;width:min(100%,320px);aspect-ratio:2/3;background:#fffaf2;touch-action:none;overflow:hidden;box-shadow:0 8px 25px #38221435;user-select:none}
+#managerArtwork{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;pointer-events:none}
+.manager-region{position:absolute;border:2px solid #c47d42;background:#c47d4230;cursor:move;touch-action:none}
+.manager-region.selected{border-color:#493329;background:#d8c2a455}.manager-region .resize-handle{position:absolute;width:12px;height:12px;right:-6px;bottom:-6px;background:#493329;border:2px solid #fff;border-radius:50%;cursor:nwse-resize}
+.manager-fields{display:flex;flex-direction:column;gap:11px}.manager-fields label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted)}.manager-fields input,.manager-fields select,.manager-fields textarea{width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;background:#fffaf2;color:var(--dark)}
+.manager-fields .coords{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}.manager-fields .actions{margin-top:3px}.manager-note{font-size:10px;line-height:1.6;color:var(--muted)}
+@media(max-width:700px){.manager-grid{grid-template-columns:1fr}.manager-stage{min-height:350px}.manager{padding:15px}.manager-head h2{font-size:20px}}
+.upload-zone{border:1px dashed #b99d7d;border-radius:13px;padding:17px;text-align:center;background:#f8f1e7;font-size:11px;color:var(--muted)}
+.upload-zone strong{display:block;color:var(--dark);margin-bottom:5px}
+.photo-list{display:flex;gap:7px;flex-wrap:wrap;max-height:95px;overflow:auto}
+.thumb{width:54px;height:54px;object-fit:cover;border-radius:8px;border:2px solid transparent;cursor:pointer}
+.thumb.active{border-color:#a78361}
+.filters{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.filter{padding:9px 3px;border:1px solid var(--line);border-radius:9px;background:#fffaf2;font-size:9px;color:var(--coffee)}
+.filter.active{background:var(--dark);color:white}
+.edit-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}
+.control{display:flex;flex-direction:column;gap:5px;font-size:10px;color:var(--muted)}
+.control input{width:100%;accent-color:var(--coffee)}
+.export-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select{border:1px solid var(--line);border-radius:9px;background:#fffaf2;padding:10px;color:var(--dark);font-size:11px}
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;z-index:30;min-height:76px;padding:12px 4%;display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;background:rgba(255,252,247,.94);backdrop-filter:blur(20px);border-top:1px solid rgba(73,51,41,.12)}
+.bottom-bar .btn{min-width:105px}.bottom-bar .save{min-width:150px;padding:14px 22px}
+.footer{padding:22px;text-align:center;color:#fff8ec;background:rgba(53,28,16,.83);font-size:9px;letter-spacing:2px}
+.toast{position:fixed;top:90px;left:50%;transform:translateX(-50%);background:var(--dark);color:white;padding:11px 18px;border-radius:30px;font-size:11px;opacity:0;pointer-events:none;transition:.25s;z-index:99}.toast.show{opacity:1}
+@media(max-width:850px){.workspace{grid-template-columns:1fr}.frame-wrap{min-height:400px}.panel{order:2}.top-center{display:none}}
+@media(max-width:520px){.topbar{height:66px}.brand{font-size:20px}.top-actions .pill{display:none}main{width:96%;margin-top:16px}.editor-card,.panel{padding:15px;border-radius:16px}.frame-wrap{min-height:350px;padding:10px}.bottom-bar{gap:5px;padding:9px 5px}.bottom-bar .btn{min-width:auto;padding:10px 11px;font-size:9px}.bottom-bar .save{min-width:105px}.step-label{font-size:8px}}
+
+/* Warm, darker studio workspace; keep the photo preview bright and neutral. */
+body{background:#302018 center/cover fixed no-repeat;color:#f5efe5}
+body:before{background:rgba(48,32,24,.46);backdrop-filter:saturate(.8)}
+.app{background:rgba(48,32,24,.22)}
+.topbar{background:rgba(48,32,24,.96);border-bottom-color:rgba(216,194,164,.18);color:#f5efe5}
+.top-center,.subtle{color:#d8c2a4}
+.pill{background:#493329;color:#f5efe5;border-color:rgba(216,194,164,.3)}
+.count{background:#a78361;color:#fffaf2}
+.stepsbar .track{background:rgba(245,239,229,.2)}
+.track span{background:#d8c2a4}
+.tab{background:#493329;color:#f5efe5;border-color:rgba(216,194,164,.24)}
+.tab.active{background:#a78361;border-color:#a78361;color:#fffaf2}
+.editor-card,.panel{background:#3b281f;color:#f5efe5;border-color:rgba(216,194,164,.14);box-shadow:0 18px 55px rgba(20,11,7,.3)}
+.panel p,.control{color:#c4ad96}
+.section{border-top-color:rgba(216,194,164,.2)}
+.frame-wrap{background:#72513d}
+.btn{background:#493329;color:#f5efe5;border-color:rgba(216,194,164,.24)}
+.btn.primary{background:#a78361;color:#fffaf2;border-color:#a78361}
+.btn.accent{background:#d8c2a4;color:#302018;border-color:#d8c2a4}
+.filter{background:#493329;color:#f5efe5;border-color:rgba(216,194,164,.24)}
+.filter.active{background:#a78361;color:#fffaf2}
+.upload-zone{background:#493329;color:#c4ad96;border-color:#a78361}
+.upload-zone strong{color:#f5efe5}
+select,.manager-fields input,.manager-fields select,.manager-fields textarea{background:#302018;color:#f5efe5;border-color:rgba(216,194,164,.28)}
+.bottom-bar{background:rgba(48,32,24,.97);border-top-color:rgba(216,194,164,.18)}
+.footer{background:#241710}
+.manager{background:#3b281f;color:#f5efe5}
+.manager-fields label,.manager-note{color:#c4ad96}
+.manager-head h2{color:#f5efe5}
+.manager-fields .coords input{color:#f5efe5}
+.toast{background:#a78361;color:#fffaf2}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand">CHAPTER.18<small>SELF PHOTO STUDIO</small></div>
+  <div class="top-center">PHOTO FRAME EDITOR · EVERY MOMENT HAS A STORY</div>
+  <div class="top-actions"><button class="pill" id="studioBtn" type="button">FRAME MANAGER</button><span class="count" id="photoCount">0</span></div>
+</header>
+
+<main>
+  <div class="stepsbar"><span class="step-label">PHOTO EDITOR</span><div class="track"><span id="progress"></span></div><span class="step-label" id="frameNumber">FRAME 1 / 5</span></div>
+  <div class="template-tabs" id="tabs"></div>
+
+  <div class="workspace">
+    <section class="editor-card">
+      <div class="editor-head"><div><div class="subtle">CURRENT TEMPLATE</div><h2 id="templateName">Frame 01 — Classic</h2></div><span class="subtle" id="slotCount">0 / 4 PHOTOS</span></div>
+      <div class="frame-wrap">
+        <div id="frame">
+          <div class="frame-brand">CHAPTER.18 · PHOTO STUDIO</div>
+          <div class="frame-caption">EVERY MOMENT HAS A STORY</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <span class="subtle">CHỌN Ô ẢNH ĐỂ CHỈNH SỬA</span>
+        <button class="btn" id="resetSlot">↺ Đặt lại ảnh đang chọn</button>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <div><div class="subtle" style="color:#a78361;margin-bottom:7px">CHAPTER.18 EDITOR</div><h3 id="panelTitle">Thêm ảnh vào khung</h3><p id="panelText">Chọn một ô ảnh để thêm ảnh. Bạn có thể tải nhiều ảnh cùng lúc và tự động điền vào các vị trí còn trống.</p></div>
+
+      <div class="section">
+        <div class="section-title">01 / Upload photos</div>
+        <div class="actions">
+          <button class="btn primary" id="oneBtn">＋ Chọn một ảnh</button>
+          <button class="btn" id="manyBtn">＋ Chọn nhiều ảnh</button>
+          <button class="btn" id="allBtn">＋ Ảnh cho tất cả khung</button>
+        </div>
+        <input type="file" id="oneInput" accept="image/jpeg,image/png,image/webp">
+        <input type="file" id="manyInput" accept="image/jpeg,image/png,image/webp" multiple>
+        <input type="file" id="allInput" accept="image/jpeg,image/png,image/webp" multiple>
+        <div class="upload-zone" id="dropZone" style="margin-top:10px"><strong>Kéo & thả ảnh vào đây</strong>JPG · PNG · WEBP</div>
+        <div class="photo-list" id="photoList" style="margin-top:10px"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">02 / Auto layout</div>
+        <div class="actions">
+          <button class="btn primary" id="autoBtn">Tự động điền 15 ảnh</button>
+          <button class="btn" id="addBtn">Thêm 1 ảnh</button>
+          <button class="btn" id="fitBtn">Tự động điều chỉnh</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">03 / Edit selected photo</div>
+        <div class="edit-grid">
+          <label class="control">Zoom <input type="range" id="zoom" min="1" max="3" step=".05" value="1"></label>
+          <label class="control">Xoay ảnh <input type="range" id="rotate" min="-180" max="180" value="0"></label>
+          <label class="control">Độ sáng <input type="range" id="brightness" min="50" max="160" value="100"></label>
+          <label class="control">Tương phản <input type="range" id="contrast" min="50" max="160" value="100"></label>
+          <label class="control">Bão hòa <input type="range" id="saturation" min="0" max="200" value="100"></label>
+        </div>
+        <div class="actions" style="margin-top:10px">
+          <button class="btn" id="leftBtn">↶</button><button class="btn" id="rightBtn">↷</button>
+          <button class="btn" id="upBtn">↑</button><button class="btn" id="downBtn">↓</button>
+          <button class="btn" id="resetEdit">Reset chỉnh sửa</button>
+          <button class="btn" id="replaceBtn">Thay ảnh</button>
+          <button class="btn" id="deleteBtn">Xóa ảnh</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">04 / Color filters</div>
+        <div class="filters" id="filters">
+          <button class="filter active" data-filter="original">ORIGINAL</button>
+          <button class="filter" data-filter="bw">B&W</button>
+          <button class="filter" data-filter="warm">WARM FILM</button>
+          <button class="filter" data-filter="vintage">VINTAGE</button>
+          <button class="filter" data-filter="cream">SOFT CREAM</button>
+          <button class="filter" data-filter="mocha">MOCHA</button>
+          <button class="filter" data-filter="classic">CLASSIC FILM</button>
+        </div>
+        <div class="actions" style="margin-top:9px"><button class="btn" id="applyAll">Áp dụng bộ lọc cho tất cả</button></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">05 / Export settings</div>
+        <div class="export-row">
+          <select id="format" aria-label="Định dạng ảnh"><option value="image/png">PNG</option><option value="image/jpeg">JPEG</option></select>
+          <select id="printSize" aria-label="Kích thước in"><option value="10x15" selected>10×15 cm</option><option value="10x10">10×10 cm</option><option value="5x15">5×15 cm</option><option value="custom">Custom size</option></select>
+          <select id="dpi" aria-label="DPI"><option value="150">150 DPI</option><option value="300" selected>300 DPI</option><option value="600">600 DPI</option></select>
+          <select id="scale" aria-label="Tỷ lệ xuất"><option value="1" selected>1×</option><option value="2">2×</option><option value="3">3×</option></select>
+          <span id="customSizeFields" style="display:none;gap:5px"><input id="customWidth" type="number" min="1" max="50" value="10" aria-label="Chiều rộng cm" style="width:62px;padding:9px;border:1px solid var(--line);border-radius:8px"><input id="customHeight" type="number" min="1" max="50" value="15" aria-label="Chiều cao cm" style="width:62px;padding:9px;border:1px solid var(--line);border-radius:8px"></span>
+          <button class="btn accent" id="exportBtn">↓ Lưu ảnh</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="bottom-bar">
+  <button class="btn" id="undoBtn">↶ Trở lại</button>
+  <button class="btn" id="originalBtn">Bản gốc</button>
+  <button class="btn" id="bwBtn">Đen trắng</button>
+  <button class="btn" id="allBwBtn">Tất cả đen trắng</button>
+  <button class="btn" id="skipBtn">Bỏ qua →</button>
+  <button class="btn primary save" id="saveBtn">LƯU ẢNH ↓</button>
+</div>
+<footer class="footer">CHAPTER.18 · SELF PHOTO STUDIO · EVERY MOMENT HAS A STORY · HUẾ, VIỆT NAM</footer>
+</div>
+<div class="toast" id="toast"></div>
+<div class="manager-backdrop" id="managerBackdrop" role="dialog" aria-modal="true" aria-labelledby="managerTitle">
+ <section class="manager">
+  <div class="manager-head"><div><div class="subtle">CHAPTER.18 / STUDIO TOOLS</div><h2 id="managerTitle">FRAME MANAGER / QUẢN LÝ KHUNG ẢNH</h2></div><button class="btn" id="closeManager" type="button">Đóng ✕</button></div>
+  <div class="manager-grid">
+   <div><div class="actions" style="margin-bottom:10px"><button class="btn primary" id="newTemplate" type="button">＋ Tạo template mới</button></div><div id="managerLibrary" class="actions" style="margin-bottom:10px"></div><div class="manager-stage"><div id="managerCanvas"><img id="managerArtwork" alt="Thiết kế frame"></div></div><p class="manager-note">Tải thiết kế PNG trong suốt để đặt artwork phía trên ảnh. Kéo trên preview để tạo vùng ảnh; kéo vùng để di chuyển, dùng nút tròn để đổi kích thước.</p></div>
+   <div class="manager-fields">
+    <label>Thiết kế frame <input id="managerFile" type="file" accept="image/png,image/jpeg,image/webp" style="display:block"></label>
+    <label>Tên frame <input id="frameName" maxlength="60" placeholder="Ví dụ: Couple · Classic"></label>
+    <label>Mã frame <input id="frameCode" maxlength="30" placeholder="C18-001"></label>
+    <label>Bộ sưu tập <select id="frameCollection"><option>Frame Collection 01</option><option>Frame Collection 02</option><option>Seasonal Collection</option><option>Couple Collection</option><option>Friends Collection</option><option>Birthday Collection</option><option>Special Edition</option></select></label>
+    <label>Mô tả <textarea id="frameDescription" rows="2" placeholder="Mô tả ngắn"></textarea></label>
+    <div class="section-title">VÙNG ẢNH ĐƯỢC CHỌN (% canvas)</div>
+    <div class="coords"><label>X %<input id="regionX" type="number" min="0" max="100" step=".1"></label><label>Y %<input id="regionY" type="number" min="0" max="100" step=".1"></label><label>W %<input id="regionW" type="number" min="0.1" max="100" step=".1"></label><label>H %<input id="regionH" type="number" min="0.1" max="100" step=".1"></label></div>
+    <div class="coords"><label>Bo góc px<input id="regionRadius" type="number" min="0" value="0"></label><label>Xoay °<input id="regionRotation" type="number" min="-180" max="180" value="0"></label><label>Layer<input id="regionLayer" type="number" value="1"></label><label>Fit<select id="regionFit"><option value="cover">Cover</option><option value="contain">Contain</option></select></label></div>
+    <div class="actions"><button class="btn" id="addRegion" type="button">＋ Thêm vùng</button><button class="btn" id="deleteRegion" type="button">Xóa vùng</button></div>
+    <label><span><input id="frameActive" type="checkbox" checked style="display:inline;width:auto"> Hiển thị frame trong thư viện khách hàng</span></label>
+    <div class="actions"><button class="btn primary" id="saveTemplate" type="button">SAVE TEMPLATE</button><button class="btn" id="deleteTemplate" type="button">Xóa template</button></div>
+    <div class="manager-note" id="managerStatus">Template lưu cục bộ trên thiết bị này bằng IndexedDB. Kích thước export mặc định là 10×15 cm, 300 DPI.</div>
+   </div>
+  </div>
+ </section>
+</div>
+
+<script>
+let templates=[
+ {name:"Frame 01 — Classic",slots:[[8,12,84,34],[8,49,40,35],[52,49,40,35]]},
+ {name:"Frame 02 — Portrait",slots:[[8,10,84,24],[8,37,84,24],[8,64,84,24]]},
+ {name:"Frame 03 — Four Moments",slots:[[7,10,41,35],[52,10,41,35],[7,48,41,35],[52,48,41,35]]},
+ {name:"Frame 04 — Film Strip",slots:[[12,9,76,23],[12,35,76,23],[12,61,76,23]]},
+ {name:"Frame 05 — Memories",slots:[[7,9,41,25],[52,9,41,25],[7,37,41,25],[52,37,41,25],[7,65,86,22]]}
+];
+const filters={
+ original:"none",bw:"grayscale(1)",warm:"sepia(.25) saturate(1.25) contrast(1.05)",vintage:"sepia(.38) contrast(.9) saturate(.8)",cream:"sepia(.16) brightness(1.08) saturate(.78)",mocha:"sepia(.48) saturate(.85) contrast(1.08)",classic:"contrast(1.12) saturate(.82) sepia(.12)"
+};
+let photos=[],current=0,selected=0,states=templates.map(t=>t.slots.map(()=>null)),history=[];
+const BUILTIN_COUNT=templates.length;
+let managerImage=null,managerImageUrl="",managerRegions=[],managerSelected=-1,managerTemplateIndex=-1,managerDrawing=null;
+const DB_NAME="chapter18-photo-editor",DB_STORE="templates";
+const $=id=>document.getElementById(id);
+const frame=$("frame");
+function notify(msg){const t=$("toast");t.textContent=msg;t.classList.add("show");setTimeout(()=>t.classList.remove("show"),2200)}
+function saveHistory(){history.push(JSON.stringify({states,selected,current}));if(history.length>30)history.shift()}
+function countFilled(){return states[current].filter(Boolean).length}
+function drawTabs(){
+ $("tabs").innerHTML=templates.map((t,i)=>({t,i})).filter(x=>x.i<BUILTIN_COUNT||x.t.active!==false).map(({t,i})=>`<button class="tab ${i===current?'active':''}" data-i="${i}">○ ${t.name}</button>`).join("");
+ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{current=+b.dataset.i;selected=0;render()});
+}
+function render(){
+ drawTabs();frame.querySelectorAll(".slot,#frameArtwork").forEach(n=>n.remove());
+ const t=templates[current];$("templateName").textContent=t.name;$("panelTitle").textContent=t.name;
+ $("frame").querySelector(".frame-brand").style.display=t.custom?"none":"";
+ $("frame").querySelector(".frame-caption").style.display=t.custom?"none":"";
+ $("frameNumber").textContent=`FRAME ${current+1} / 5`;$("progress").style.width=((current+1)*20)+"%";
+ $("slotCount").textContent=`${countFilled()} / ${t.slots.length} PHOTOS`;
+ $("photoCount").textContent=photos.length;
+ t.slots.forEach((s,i)=>{
+  const el=document.createElement("div");el.className="slot"+(i===selected?" selected":"");
+  el.style.cssText=`left:${s[0]}%;top:${s[1]}%;width:${s[2]}%;height:${s[3]}%`;
+  const st=states[current][i];
+  const region=t.custom?t.regions[i]:null;
+  if(region){el.style.borderRadius=`${region.radius||0}px`;el.style.transform=`rotate(${region.rotation||0}deg)`;el.style.zIndex=String(Math.max(i===selected?4:2,region.layer||1));el.style.background="transparent"}
+  if(st){const im=document.createElement("img");im.src=st.src;im.style.filter=`${filters[st.filter||"original"]} brightness(${st.brightness||100}%) contrast(${st.contrast||100}%) saturate(${st.saturation||100}%)`;im.style.objectFit=region?.fit||"cover";el.appendChild(im)}
+  else el.innerHTML='<div class="placeholder"><span class="camera">◎</span><b>＋ Thêm hình ảnh</b></div>';
+  el.onclick=()=>{selected=i;render();loadControls()};
+  frame.appendChild(el);
+ });
+ if(t.custom&&t.artwork){const art=document.createElement("img");art.id="frameArtwork";art.src=t.artwork;art.alt="Frame artwork";frame.appendChild(art)}
+ renderPhotos();loadControls();
+}
+function renderPhotos(){
+ $("photoList").innerHTML="";
+ photos.forEach((p,i)=>{const im=document.createElement("img");im.src=p.src;im.className="thumb";im.title=p.name;im.onclick=()=>assignPhoto(i);$("photoList").appendChild(im)});
+}
+function loadControls(){
+ const st=states[current][selected]||{};
+ ["zoom","rotate","brightness","contrast","saturation"].forEach(k=>$(k).value=st[k]??({zoom:1,rotate:0,brightness:100,contrast:100,saturation:100}[k]));
+ document.querySelectorAll(".filter").forEach(b=>b.classList.toggle("active",b.dataset.filter===(st.filter||"original")));
+}
+function addFiles(files,assignAll=false){
+ const valid=[...files].filter(f=>/^image\/(jpeg|png|webp)$/.test(f.type));
+ if(!valid.length)return notify("Vui lòng chọn ảnh JPG, PNG hoặc WEBP.");
+ saveHistory();
+ valid.forEach(f=>photos.push({src:URL.createObjectURL(f),name:f.name}));
+ if(assignAll){let k=0;states.forEach((arr)=>arr.forEach((_,i)=>{if(k<photos.length)arr[i]=makeState(photos[k++].src)}))}
+ else {let k=0;for(let i=0;i<states[current].length&&k<valid.length;i++){if(!states[current][i])states[current][i]=makeState(photos[photos.length-valid.length+k++].src)}}
+ render();notify(`${valid.length} ảnh đã được thêm.`);
+}
+function makeState(src){return {src,x:0,y:0,zoom:1,rotate:0,brightness:100,contrast:100,saturation:100,filter:"original"}}
+function assignPhoto(i){saveHistory();states[current][selected]=makeState(photos[i].src);render()}
+function assignSelectedFile(file){if(!file)return;addFiles([file]);let p=photos[photos.length-1];saveHistory();states[current][selected]=makeState(p.src);render()}
+$("oneBtn").onclick=()=>$("oneInput").click();$("manyBtn").onclick=()=>$("manyInput").click();$("allBtn").onclick=()=>$("allInput").click();
+$("oneInput").onchange=e=>assignSelectedFile(e.target.files[0]);
+$("manyInput").onchange=e=>addFiles(e.target.files);
+$("allInput").onchange=e=>addFiles(e.target.files,true);
+$("addBtn").onclick=()=>$("oneInput").click();
+$("replaceBtn").onclick=()=>$("oneInput").click();
+$("autoBtn").onclick=()=>{if(!photos.length)return notify("Hãy tải ảnh lên trước.");saveHistory();let p=0;states[current].forEach((st,i)=>{if(!st&&p<photos.length)states[current][i]=makeState(photos[p++].src)});render();notify("Đã tự động điền ảnh vào các ô trống.")};
+$("fitBtn").onclick=()=>{saveHistory();states[current]=states[current].map(s=>s?{...s,x:0,y:0,zoom:1,rotate:0}:s);render();notify("Đã căn chỉnh ảnh về vị trí mặc định.")};
+$("dropZone").ondragover=e=>{e.preventDefault();$("dropZone").style.background="#ead9c4"};
+$("dropZone").ondragleave=()=>{$("dropZone").style.background="#f8f1e7"};
+$("dropZone").ondrop=e=>{e.preventDefault();addFiles(e.dataTransfer.files);$("dropZone").style.background="#f8f1e7"};
+["zoom","rotate","brightness","contrast","saturation"].forEach(k=>$(k).oninput=()=>{const st=states[current][selected];if(!st)return;st[k]=+$(k).value;renderSlotOnly()});
+function renderSlotOnly(){const el=frame.querySelectorAll(".slot")[selected],st=states[current][selected];if(!el||!st)return;const im=el.querySelector("img");if(im){im.style.transform=`translate(${st.x}px,${st.y}px) scale(${st.zoom}) rotate(${st.rotate}deg)`;im.style.filter=`${filters[st.filter]} brightness(${st.brightness}%) contrast(${st.contrast}%) saturate(${st.saturation}%)`}}
+document.querySelectorAll(".filter").forEach(b=>b.onclick=()=>{const st=states[current][selected];if(!st)return notify("Hãy chọn ô ảnh trước.");st.filter=b.dataset.filter;loadControls();renderSlotOnly()});
+$("applyAll").onclick=()=>{const st=states[current][selected];if(!st)return;saveHistory();states[current]=states[current].map(x=>x?{...x,filter:st.filter}:x);render()};
+function move(x,y){const st=states[current][selected];if(!st)return;st.x=(st.x||0)+x;st.y=(st.y||0)+y;renderSlotOnly()}
+$("leftBtn").onclick=()=>move(-8,0);$("rightBtn").onclick=()=>move(8,0);$("upBtn").onclick=()=>move(0,-8);$("downBtn").onclick=()=>move(0,8);
+$("resetEdit").onclick=()=>{const st=states[current][selected];if(!st)return;saveHistory();Object.assign(st,{x:0,y:0,zoom:1,rotate:0,brightness:100,contrast:100,saturation:100,filter:"original"});render()};
+$("resetSlot").onclick=$("resetEdit").onclick;
+$("deleteBtn").onclick=()=>{saveHistory();states[current][selected]=null;render()};
+$("originalBtn").onclick=()=>{const st=states[current][selected];if(!st)return;st.filter="original";loadControls();renderSlotOnly()};
+$("bwBtn").onclick=()=>{const st=states[current][selected];if(!st)return;st.filter="bw";loadControls();renderSlotOnly()};
+$("allBwBtn").onclick=()=>{saveHistory();states[current]=states[current].map(s=>s?{...s,filter:"bw"}:s);render()};
+$("skipBtn").onclick=()=>{current=(current+1)%5;selected=0;render()};
+$("undoBtn").onclick=()=>{if(!history.length)return notify("Không có thao tác để hoàn tác.");const h=JSON.parse(history.pop());states=h.states;selected=h.selected;current=h.current;render()};
+$("saveBtn").onclick=$("exportBtn").onclick=exportImage;
+function loadImage(src){return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=src})}
+function openTemplateDB(){return new Promise((resolve,reject)=>{const req=indexedDB.open(DB_NAME,1);req.onupgradeneeded=()=>req.result.createObjectStore(DB_STORE,{keyPath:"id"});req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error)})}
+async function getSavedTemplates(){const db=await openTemplateDB();return new Promise((resolve,reject)=>{const req=db.transaction(DB_STORE,"readonly").objectStore(DB_STORE).getAll();req.onsuccess=()=>resolve(req.result||[]);req.onerror=()=>reject(req.error)})}
+async function putSavedTemplate(item){const db=await openTemplateDB();return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,"readwrite");tx.objectStore(DB_STORE).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+async function removeSavedTemplate(id){const db=await openTemplateDB();return new Promise((resolve,reject)=>{const tx=db.transaction(DB_STORE,"readwrite");tx.objectStore(DB_STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error)})}
+function fileAsDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(file)})}
+function setManagerOpen(open){$("managerBackdrop").classList.toggle("open",open);if(open)drawManager()}
+$("studioBtn").onclick=()=>setManagerOpen(true);$("closeManager").onclick=()=>setManagerOpen(false);
+$("managerBackdrop").onclick=e=>{if(e.target===$("managerBackdrop"))setManagerOpen(false)};
+$("managerFile").onchange=async e=>{const file=e.target.files[0];if(!file)return;if(!["image/png","image/jpeg","image/webp"].includes(file.type))return notify("Chọn PNG, JPG hoặc WEBP.");managerImage=await fileAsDataURL(file);managerImageUrl=managerImage;$("managerArtwork").src=managerImage;const image=await loadImage(managerImage);$("managerCanvas").style.aspectRatio=`${image.naturalWidth} / ${image.naturalHeight}`;$("managerStatus").textContent=`Artwork ${image.naturalWidth} × ${image.naturalHeight} px · vùng ảnh được lưu theo phần trăm.`};
+function managerRect(box){const stage=$("managerCanvas").getBoundingClientRect();return {x:box.x/100*stage.width,y:box.y/100*stage.height,w:box.w/100*stage.width,h:box.h/100*stage.height}}
+function drawManager(){const library=$("managerLibrary");if(library)library.innerHTML=templates.slice(BUILTIN_COUNT).map((t,i)=>`<button class="btn" data-template="${i+BUILTIN_COUNT}">${t.active===false?"◌ ":"● "}${t.name}</button>`).join("");library?.querySelectorAll("[data-template]").forEach(b=>b.onclick=()=>loadTemplateIntoManager(+b.dataset.template));const canvas=$("managerCanvas");canvas.innerHTML='<img id="managerArtwork" alt="Thiết kế frame">';if(managerImage)$("managerArtwork").src=managerImage;canvas.style.aspectRatio=managerImage?canvas.style.aspectRatio:"2 / 3";managerRegions.forEach((r,i)=>{const d=document.createElement("div");d.className="manager-region"+(i===managerSelected?" selected":"");const q=managerRect(r);Object.assign(d.style,{left:q.x+"px",top:q.y+"px",width:q.w+"px",height:q.h+"px",zIndex:String(r.layer||1),borderRadius:(r.radius||0)+"px",transform:`rotate(${r.rotation||0}deg)`});d.dataset.index=i;d.innerHTML='<span class="resize-handle"></span>';canvas.appendChild(d)});syncRegionFields()}
+function syncRegionFields(){const r=managerRegions[managerSelected];["regionX","regionY","regionW","regionH"].forEach((id,i)=>$(id).value=r?+[r.x,r.y,r.w,r.h][i].toFixed(1):"");$("regionRadius").value=r?.radius||0;$("regionRotation").value=r?.rotation||0;$("regionLayer").value=r?.layer||1;$("regionFit").value=r?.fit||"cover"}
+function updateManagerRegion(){const r=managerRegions[managerSelected];if(!r)return;r.x=Math.max(0,Math.min(100,+$("regionX").value||0));r.y=Math.max(0,Math.min(100,+$("regionY").value||0));r.w=Math.max(.1,Math.min(100-r.x,+$("regionW").value||1));r.h=Math.max(.1,Math.min(100-r.y,+$("regionH").value||1));r.radius=+$("regionRadius").value||0;r.rotation=+$("regionRotation").value||0;r.layer=+$("regionLayer").value||1;r.fit=$("regionFit").value;drawManager()}
+["regionX","regionY","regionW","regionH","regionRadius","regionRotation","regionLayer","regionFit"].forEach(id=>$(id).onchange=updateManagerRegion);
+$("managerCanvas").onpointerdown=e=>{const canvas=$("managerCanvas"),rect=canvas.getBoundingClientRect(),el=e.target.closest(".manager-region"),idx=el?+el.dataset.index:-1;managerSelected=idx;const resize=e.target.classList.contains("resize-handle");if(el){const r=managerRegions[idx];managerDrawing={mode:resize?"resize":"move",index:idx,startX:e.clientX,startY:e.clientY,origin:{...r}}}else{managerDrawing={mode:"create",startX:e.clientX,startY:e.clientY,rect};managerRegions.push({x:(e.clientX-rect.left)/rect.width*100,y:(e.clientY-rect.top)/rect.height*100,w:.1,h:.1,radius:0,rotation:0,layer:managerRegions.length+1,fit:"cover"});managerSelected=managerRegions.length-1;managerDrawing.index=managerSelected}canvas.setPointerCapture(e.pointerId);drawManager()};
+$("managerCanvas").onpointermove=e=>{if(!managerDrawing)return;const c=$("managerCanvas").getBoundingClientRect(),d=managerDrawing,dx=(e.clientX-d.startX)/c.width*100,dy=(e.clientY-d.startY)/c.height*100,r=managerRegions[d.index];if(d.mode==="create"){r.x=Math.max(0,Math.min(100,(d.startX-c.left)/c.width*100));r.y=Math.max(0,Math.min(100,(d.startY-c.top)/c.height*100));r.w=Math.max(.2,Math.min(100-r.x,Math.abs(dx)));r.h=Math.max(.2,Math.min(100-r.y,Math.abs(dy)));if(dx<0)r.x=Math.max(0,(d.startX-c.left)/c.width*100+dx);if(dy<0)r.y=Math.max(0,(d.startY-c.top)/c.height*100+dy)}else if(d.mode==="move"){r.x=Math.max(0,Math.min(100-r.w,d.origin.x+dx));r.y=Math.max(0,Math.min(100-r.h,d.origin.y+dy))}else{r.w=Math.max(.5,Math.min(100-r.x,d.origin.w+dx));r.h=Math.max(.5,Math.min(100-r.y,d.origin.h+dy))}drawManager()};
+$("managerCanvas").onpointerup=()=>{managerDrawing=null};
+$("addRegion").onclick=()=>{managerRegions.push({x:10,y:10,w:35,h:25,radius:0,rotation:0,layer:managerRegions.length+1,fit:"cover"});managerSelected=managerRegions.length-1;drawManager()};
+$("deleteRegion").onclick=()=>{if(managerSelected<0)return;managerRegions.splice(managerSelected,1);managerSelected=Math.min(managerSelected,managerRegions.length-1);drawManager()};
+function loadTemplateIntoManager(index){const t=templates[index];if(!t)return;managerTemplateIndex=index;managerImage=t.artwork;managerRegions=t.regions.map(r=>({...r}));managerSelected=0;$("frameName").value=t.name;$("frameCode").value=t.code||"";$("frameDescription").value=t.description||"";$("frameCollection").value=t.collection||"Frame Collection 01";$("frameActive").checked=t.active!==false;drawManager()}
+$("newTemplate").onclick=()=>newManagerTemplate();
+function newManagerTemplate(){managerTemplateIndex=-1;managerImage=null;managerRegions=[];managerSelected=-1;$("frameName").value="";$("frameCode").value="";$("frameDescription").value="";$("managerFile").value="";$("frameActive").checked=true;drawManager()}
+$("saveTemplate").onclick=async()=>{if(!managerImage)return notify("Tải thiết kế frame lên trước.");if(!managerRegions.length)return notify("Tạo ít nhất một vùng ảnh bằng thao tác kéo trên frame.");const name=$("frameName").value.trim();if(!name)return notify("Vui lòng nhập tên frame.");const item={id:managerTemplateIndex>=0?templates[managerTemplateIndex].id:`frame-${Date.now()}`,name,code:$("frameCode").value.trim()||`C18-${Date.now().toString().slice(-6)}`,description:$("frameDescription").value.trim(),collection:$("frameCollection").value,active:$("frameActive").checked,artwork:managerImage,regions:managerRegions.map(r=>({...r})),custom:true};item.slots=item.regions.map(r=>[r.x,r.y,r.w,r.h]);try{await putSavedTemplate(item);if(managerTemplateIndex>=BUILTIN_COUNT){templates[managerTemplateIndex]=item;states[managerTemplateIndex]=item.slots.map((_,i)=>states[managerTemplateIndex]?.[i]||null)}else{templates.push(item);states.push(item.slots.map(()=>null));managerTemplateIndex=templates.length-1}render();$("managerStatus").textContent=`Đã lưu ${name} vào thư viện trên thiết bị này.`;notify("Đã lưu template.")}catch(err){notify("Không thể lưu template trong bộ nhớ trình duyệt.")}};
+$("deleteTemplate").onclick=async()=>{if(managerTemplateIndex<BUILTIN_COUNT)return notify("Chọn template do studio tạo để xóa.");const item=templates[managerTemplateIndex];if(!item)return;await removeSavedTemplate(item.id);templates.splice(managerTemplateIndex,1);states.splice(managerTemplateIndex,1);managerTemplateIndex=-1;newManagerTemplate();render();notify("Đã xóa template.")};
+async function loadCustomTemplates(){try{const saved=await getSavedTemplates();saved.forEach(t=>{if(!templates.some(x=>x.id===t.id)){templates.push(t);states.push(t.slots.map(()=>null))}});render()}catch(e){notify("IndexedDB không khả dụng; template chưa thể tải lại.")}}
+$("printSize").onchange=()=>{$("customSizeFields").style.display=$("printSize").value==="custom"?"flex":"none"};
+$("templateName").ondblclick=()=>{const t=templates[current];if(t.custom){managerTemplateIndex=current;managerImage=t.artwork;managerRegions=t.regions.map(r=>({...r}));managerSelected=0;$("frameName").value=t.name;$("frameCode").value=t.code||"";$("frameDescription").value=t.description||"";$("frameCollection").value=t.collection||"Frame Collection 01";$("frameActive").checked=t.active!==false;setManagerOpen(true)}};
+async function exportImage(){
+ const scale=+$('scale').value,format=$("format").value;
+ const size=$("printSize").value,dimensions=size==="custom"?[+$("customWidth").value,+$("customHeight").value]:size.split("x").map(Number);
+ if(!dimensions[0]||!dimensions[1])return notify("Vui lòng nhập kích thước hợp lệ.");
+ const dpi=+$('dpi').value,W=Math.round(dimensions[0]/2.54*dpi*scale),H=Math.round(dimensions[1]/2.54*dpi*scale),canvas=document.createElement("canvas");canvas.width=W;canvas.height=H;
+ const ctx=canvas.getContext("2d");ctx.fillStyle="#fffaf2";ctx.fillRect(0,0,W,H);
+ const activeTemplate=templates[current];
+ if(activeTemplate.custom&&activeTemplate.artwork){const artwork=await loadImage(activeTemplate.artwork);ctx.drawImage(artwork,0,0,W,H)}
+ if(!activeTemplate.custom){ctx.fillStyle="#72513d";ctx.textAlign="center";ctx.font=`600 ${18*scale}px Arial`;ctx.fillText("CHAPTER.18 · PHOTO STUDIO",W/2,42*scale)}
+ for(let i=0;i<activeTemplate.slots.length;i++){
+  const activeTemplate=templates[current],s=activeTemplate.slots[i],st=states[current][i];
+  const x=s[0]/100*W,y=s[1]/100*H,w=s[2]/100*W,h=s[3]/100*H,region=activeTemplate.custom?activeTemplate.regions[i]:null;
+  ctx.save();ctx.beginPath();
+  if(region&&(region.radius||0)>0&&ctx.roundRect)ctx.roundRect(x,y,w,h,(region.radius||0)*W/$("managerCanvas").clientWidth);else ctx.rect(x,y,w,h);
+  ctx.clip();
+  if(st){
+   const im=await loadImage(st.src),ratio=Math.max(w/im.width,h/im.height)*(st.zoom||1),iw=im.width*ratio,ih=im.height*ratio;
+   ctx.filter=`${filters[st.filter||"original"]} brightness(${st.brightness||100}%) contrast(${st.contrast||100}%) saturate(${st.saturation||100}%)`;
+   ctx.translate(x+w/2+(st.x||0)*scale,y+h/2+(st.y||0)*scale);ctx.rotate(((st.rotate||0)+(region?.rotation||0))*Math.PI/180);
+   ctx.drawImage(im,-iw/2,-ih/2,iw,ih);
+  }else{ctx.fillStyle="#eee6db";ctx.fillRect(x,y,w,h);ctx.strokeStyle="#b99d7d";ctx.setLineDash([8*scale,8*scale]);ctx.strokeRect(x,y,w,h)}
+  ctx.restore();ctx.filter="none";
+ }
+ if(!activeTemplate.custom){ctx.fillStyle="#493329";ctx.textAlign="center";ctx.font=`${24*scale}px Georgia`;ctx.fillText("EVERY MOMENT HAS A STORY",W/2,H-38*scale)}
+ const a=document.createElement("a");a.download=`CHAPTER18-Frame-${current+1}.${format==="image/png"?"png":"jpg"}`;a.href=canvas.toDataURL(format,0.96);a.click();notify("Đã xuất ảnh thành công.");
+}
+render();
+loadCustomTemplates();
+</script>
+</body>
+</html>
